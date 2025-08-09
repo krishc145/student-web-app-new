@@ -19,12 +19,12 @@ pipeline {
         success {
             emailext subject: "Jenkins Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has completed successfully. A new JAR has been generated.",
-                to: 'your_email@domain.com'
+                to: 'krishnakumarchinnusamy@gmail.com'
         }
         failure {
             emailext subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has failed.",
-                to: 'your_email@domain.com'
+                to: 'krishnakumarchinnusamy@gmail.com'
         }
     }
 }
