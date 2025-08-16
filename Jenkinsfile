@@ -1,3 +1,5 @@
+@Library("shared-library-gmail") _   // 👈 import your shared library
+
 pipeline {
     agent any
 
@@ -15,16 +17,46 @@ pipeline {
             }
         }
     }
+
     post {
         success {
-            emailext subject: "Jenkins Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has completed successfully. A new JAR has been generated.",
-                to: 'krishnakumarchinnusamy@gmail.com'
+            script {
+                withCredentials([string(credentialsId: 'gmail-app-password-id', variable: 'GMAIL_PASS')]) {
+                    sendGmail(
+                        to: "krishnakumarchinnusamy@gmail.com",
+                        subject: "✅ Jenkins Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        body: """Hello,
+
+The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has completed successfully. 
+A new JAR has been generated.
+
+Regards,
+Jenkins
+""",
+                        user: "krishnakumarchinnusamy@gmail.com",
+                        password: "${GMAIL_PASS}"
+                    )
+                }
+            }
         }
         failure {
-            emailext subject: "Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has failed.",
-                to: 'krishnakumarchinnusamy@gmail.com'
+            script {
+                withCredentials([string(credentialsId: 'gmail-app-password-id', variable: 'GMAIL_PASS')]) {
+                    sendGmail(
+                        to: "krishnakumarchinnusamy@gmail.com",
+                        subject: "❌ Jenkins Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        body: """Hello,
+
+The job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has failed.
+
+Regards,
+Jenkins
+""",
+                        user: "krishnakumarchinnusamy@gmail.com",
+                        password: "${GMAIL_PASS}"
+                    )
+                }
+            }
         }
     }
 }
