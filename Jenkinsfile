@@ -2,54 +2,52 @@ pipeline {
     agent any
 
     environment {
-        // Set JAVA_HOME to your installed JDK (system-wide path is preferred)
-        JAVA_HOME = 'C:\\Users\\krish\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.16.8-hotspot'
-        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
+        MAVEN_HOME = "C:\\ProgramData\\Jenkins\\.jenkins\\tools\\hudson.tasks.Maven_MavenInstallation\\maven"
+        JAVA_HOME = "C:\\Program Files\\Java\\jdk1.8.0_341"
+        PATH = "${env.JAVA_HOME}\\bin;${env.MAVEN_HOME}\\bin;${env.PATH}"
+    }
 
-        // Email recipient
-        EMAIL_RECIPIENT = 'krishnakumarchinnusamy@gmail.com'
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10')) // keep last 10 builds
+        timestamps()
     }
 
     stages {
-        stage('Checkout') {
+        stage('Cleanup Workspace') {
             steps {
-                // Checkout code from GitHub
-                git branch: 'main', url: 'https://github.com/krishc145/student-web-app-new.git'
+                deleteDir() // deletes the workspace to free up space
             }
         }
 
-        stage('Build') {
+        stage('Checkout Code') {
             steps {
-                // Windows agent, use bat instead of sh
-                bat 'mvn clean package'
+                git(
+                    url: 'https://github.com/krishc145/student-web-app-new.git',
+                    branch: 'main',
+                    credentialsId: 'b0725751-8901-49f7-b432-5a0f0168ad35'
+                )
+            }
+        }
+
+        stage('Build & Package') {
+            steps {
+                bat "${MAVEN_HOME}\\bin\\mvn.cmd clean install -U"
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                bat "${MAVEN_HOME}\\bin\\mvn.cmd tomcat7:deploy"
             }
         }
     }
 
     post {
         success {
-            mail to: "${EMAIL_RECIPIENT}",
-                 subject: "✅ Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Hello,
-
-The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has completed successfully.
-A new JAR has been generated in the target folder.
-
-Regards,
-Jenkins"""
+            echo "Build and deployment succeeded!"
         }
-
         failure {
-            mail to: "${EMAIL_RECIPIENT}",
-                 subject: "❌ Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Hello,
-
-The Jenkins job ${env.JOB_NAME} build #${env.BUILD_NUMBER} has failed.
-
-Please check the console output for details.
-
-Regards,
-Jenkins"""
+            echo "Build failed. Check the console output."
         }
     }
 }
