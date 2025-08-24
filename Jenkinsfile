@@ -2,6 +2,8 @@ pipeline {
     agent any
 
     environment {
+        JAVA_HOME = 'C:\\Java\\jdk-17.0.12'
+        PATH = "${JAVA_HOME}\\bin;${env.PATH}"
         EMAIL_RECIPIENT = 'krishnakumarchinnusamy@gmail.com'
     }
 
@@ -14,7 +16,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                bat 'mvn clean package'
             }
         }
     }
@@ -23,23 +25,13 @@ pipeline {
         success {
             mail to: "${EMAIL_RECIPIENT}",
                  subject: "✅ Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Hello,
-
-The build for ${env.JOB_NAME} #${env.BUILD_NUMBER} has completed successfully.
-
-Regards,
-Jenkins"""
+                 body: "Build completed successfully!"
         }
 
         failure {
             mail to: "${EMAIL_RECIPIENT}",
                  subject: "❌ Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Hello,
-
-The build for ${env.JOB_NAME} #${env.BUILD_NUMBER} has failed.
-
-Regards,
-Jenkins"""
+                 body: "Build failed!"
         }
     }
 }
