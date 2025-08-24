@@ -37,11 +37,6 @@ pipeline {
             }
         }
 
-        stage('Deploy to Tomcat') {
-            steps {
-                bat "${MAVEN_HOME}\\bin\\mvn.cmd tomcat7:deploy"
-            }
-        }
     }
 
     post {
