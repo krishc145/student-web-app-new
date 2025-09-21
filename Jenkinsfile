@@ -6,7 +6,7 @@ pipeline {
         JAVA_HOME = "C:\\Program Files\\Java\\jdk1.8.0_341"
         PATH = "${env.JAVA_HOME}\\bin;${env.MAVEN_HOME}\\bin;${env.PATH}"
         GMAIL_USER = "krishnakumarchinnusamy@gmail.com"
-        GMAIL_PASS = "ixsaxrbunuvaxluf"  // ⚠️ Better to store in Jenkins credentials
+        GMAIL_PASS = "ixsaxrbunuvaxluf"  // ⚠️ Move this to Jenkins credentials
     }
 
     options {
@@ -37,6 +37,27 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan JAR') {
+            steps {
+                script {
+                    // Assuming your JAR is in target/ folder
+                    def jarFile = "target/student-web-app-new-1.0-SNAPSHOT.jar"
+
+                    // Run Trivy FS scan
+                    bat """
+                        trivy fs --exit-code 0 --severity HIGH,CRITICAL --output trivy-report.txt ${jarFile}
+                    """
+                    
+                    // Show report in console
+                    bat "type trivy-report.txt"
+                    
+                    // Fail build if critical vulns found
+                    bat """
+                        trivy fs --exit-code 1 --severity CRITICAL ${jarFile}
+                    """
+                }
+            }
+        }
     }
 
     post {
@@ -57,8 +78,10 @@ Subject: ✅ Jenkins Build SUCCESS
 Hello,
 Your Jenkins job for ${env.JOB_NAME} (build #${env.BUILD_NUMBER}) succeeded.
 
+Trivy Report attached in console log.
+
 See details: ${env.BUILD_URL}
-\"\"\"
+\"\"\" 
 
 context = ssl.create_default_context()
 with smtplib.SMTP(smtp_server, port) as server:
@@ -86,8 +109,10 @@ Subject: ❌ Jenkins Build FAILED
 Hello,
 Your Jenkins job for ${env.JOB_NAME} (build #${env.BUILD_NUMBER}) has FAILED.
 
+Check console log for Trivy or build errors.
+
 See details: ${env.BUILD_URL}
-\"\"\"
+\"\"\" 
 
 context = ssl.create_default_context()
 with smtplib.SMTP(smtp_server, port) as server:
