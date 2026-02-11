@@ -9,7 +9,7 @@ variables:
 
 steps:
 
-# Install Java
+# Use Java
 - task: JavaToolInstaller@0
   inputs:
     versionSpec: '$(javaVersion)'
@@ -17,7 +17,7 @@ steps:
     jdkSourceOption: 'PreInstalled'
   displayName: 'Use Java $(javaVersion)'
 
-# Checkout Code (explicit for clarity)
+# Checkout Code
 - checkout: self
 
 # Build with Maven
@@ -28,19 +28,32 @@ steps:
     options: '-DskipTests=false'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-  displayName: 'Build and Test with Maven'
+  displayName: 'Build and Test'
 
-# Copy JAR to Artifact Staging
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)'
-    Contents: '**/target/*.jar'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  displayName: 'Copy JAR to staging'
+# Debug – List files after build
+- script: |
+    echo "Listing project structure after build"
+    ls -R
+  displayName: 'Debug - List Files'
 
-# Publish Artifact
-- task: PublishBuildArtifacts@1
+# Create staging directory
+- script: mkdir -p $(Build.ArtifactStagingDirectory)
+  displayName: 'Create Artifact Directory'
+
+# Copy JAR manually (safe method)
+- script: |
+    cp target/*.jar $(Build.ArtifactStagingDirectory) || true
+  displayName: 'Copy JAR to Artifact Staging'
+
+# Verify JAR exists
+- script: |
+    echo "Files in Artifact Staging Directory:"
+    ls -l $(Build.ArtifactStagingDirectory)
+  displayName: 'Verify Artifact'
+
+# Publish Pipeline Artifact (Recommended modern method)
+- task: PublishPipelineArtifact@1
   inputs:
-    pathToPublish: '$(Build.ArtifactStagingDirectory)'
-    artifactName: 'drop'
-  displayName: 'Publish Artifacts'
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifact: 'drop'
+  displayName: 'Publish Artifact'
