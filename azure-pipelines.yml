@@ -5,32 +5,38 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  buildConfiguration: 'Release'
+  javaVersion: '17'
 
 steps:
 
-# Install .NET SDK
-- task: UseDotNet@2
+# Install Java
+- task: JavaToolInstaller@0
   inputs:
-    packageType: 'sdk'
-    version: '8.x'
-  displayName: 'Install .NET SDK'
+    versionSpec: '$(javaVersion)'
+    jdkArchitectureOption: 'x64'
+    jdkSourceOption: 'PreInstalled'
+  displayName: 'Use Java $(javaVersion)'
 
-# Restore dependencies
-- script: dotnet restore
-  displayName: 'Restore NuGet packages'
+# Checkout Code (explicit for clarity)
+- checkout: self
 
-# Build
-- script: dotnet build --configuration $(buildConfiguration) --no-restore
-  displayName: 'Build Project'
+# Build with Maven
+- task: Maven@4
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    options: '-DskipTests=false'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+  displayName: 'Build and Test with Maven'
 
-# Run Tests
-- script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
-  displayName: 'Run Unit Tests'
-
-# Publish
-- script: dotnet publish --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)
-  displayName: 'Publish Project'
+# Copy JAR to Artifact Staging
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)'
+    Contents: '**/target/*.jar'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Copy JAR to staging'
 
 # Publish Artifact
 - task: PublishBuildArtifacts@1
